@@ -1,4 +1,4 @@
-# Dehumidifier auto control
+# Dehumidifier Auto Control
 
 LG ThinQ Connect API로 제습기를 자동 제어합니다.
 습도 55% 이상이면 켜고, 50% 이하면 끕니다. 15분마다 GitHub Actions로 실행됩니다.
