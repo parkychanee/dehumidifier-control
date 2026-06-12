@@ -1,5 +1,6 @@
 import base64
 import os
+import sys
 import uuid
 
 import requests
@@ -49,18 +50,31 @@ def set_power(turn_on: bool):
 
 
 def main():
-    state = get_state()
-    humidity = state["humidity"]["currentHumidity"]
-    is_on = state["operation"]["dehumidifierOperationMode"] == "POWER_ON"
+    try:
+        state = get_state()
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to fetch device state: {e}")
+        sys.exit(1)
+
+    try:
+        humidity = state["humidity"]["currentHumidity"]
+        is_on = state["operation"]["dehumidifierOperationMode"] == "POWER_ON"
+    except (KeyError, TypeError) as e:
+        print(f"Unexpected state response format: {state} ({e})")
+        sys.exit(1)
 
     print(f"Current humidity: {humidity}%, power on: {is_on}")
 
-    if humidity >= TURN_ON_ABOVE and not is_on:
-        set_power(True)
-    elif humidity <= TURN_OFF_BELOW and is_on:
-        set_power(False)
-    else:
-        print("No action needed.")
+    try:
+        if humidity >= TURN_ON_ABOVE and not is_on:
+            set_power(True)
+        elif humidity <= TURN_OFF_BELOW and is_on:
+            set_power(False)
+        else:
+            print("No action needed.")
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to send control command: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
