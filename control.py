@@ -1,7 +1,9 @@
 import base64
+import json
 import os
 import sys
 import uuid
+from pathlib import Path
 
 import requests
 
@@ -15,6 +17,18 @@ BASE_URL = "https://api-kic.lgthinq.com"
 
 TURN_ON_ABOVE = 55
 TURN_OFF_BELOW = 50
+
+STATE_FILE = Path(__file__).parent / "state.json"
+
+
+def load_last_state():
+    if STATE_FILE.exists():
+        return json.loads(STATE_FILE.read_text())
+    return {"is_on": None, "we_turned_off": False}
+
+
+def save_last_state(data):
+    STATE_FILE.write_text(json.dumps(data))
 
 
 def make_message_id():
@@ -56,8 +70,6 @@ def main():
         print(f"Failed to fetch device state: {e}")
         sys.exit(1)
 
-    print(f"Full state (debug): {state}")
-
     try:
         humidity = state["humidity"]["currentHumidity"]
         is_on = state["operation"]["dehumidifierOperationMode"] == "POWER_ON"
@@ -67,16 +79,33 @@ def main():
 
     print(f"Current humidity: {humidity}%, power on: {is_on}")
 
+    last = load_last_state()
+    we_turned_off = last.get("we_turned_off", False)
+
     try:
         if humidity >= TURN_ON_ABOVE and not is_on:
+            if last.get("is_on") is True and not we_turned_off:
+                print(
+                    "Humidity is high but the dehumidifier turned itself off "
+                    "since the last check (and we didn't turn it off). "
+                    "This likely means the water tank is full - skipping auto restart."
+                )
+                save_last_state({"is_on": is_on, "we_turned_off": we_turned_off})
+                sys.exit(1)
             set_power(True)
+            we_turned_off = False
         elif humidity <= TURN_OFF_BELOW and is_on:
             set_power(False)
+            we_turned_off = True
         else:
             print("No action needed.")
+            if is_on:
+                we_turned_off = False
     except requests.exceptions.RequestException as e:
         print(f"Failed to send control command: {e}")
         sys.exit(1)
+
+    save_last_state({"is_on": is_on, "we_turned_off": we_turned_off})
 
 
 if __name__ == "__main__":

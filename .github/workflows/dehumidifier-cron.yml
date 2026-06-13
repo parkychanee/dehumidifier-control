@@ -5,6 +5,9 @@ on:
     - cron: '*/15 * * * *'
   workflow_dispatch: {}
 
+permissions:
+  contents: write
+
 jobs:
   control:
     runs-on: ubuntu-latest
@@ -22,3 +25,14 @@ jobs:
           THINQ_PAT: ${{ secrets.THINQ_PAT }}
           THINQ_CLIENT_ID: ${{ secrets.THINQ_CLIENT_ID }}
           THINQ_DEVICE_ID: ${{ secrets.THINQ_DEVICE_ID }}
+
+      - name: Save state
+        if: always()
+        run: |
+          if [ -n "$(git status --porcelain state.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add state.json
+            git commit -m "Update state.json [skip ci]"
+            git push
+          fi
