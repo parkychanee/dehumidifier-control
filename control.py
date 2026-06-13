@@ -56,6 +56,8 @@ def main():
         print(f"Failed to fetch device state: {e}")
         sys.exit(1)
 
+    print(f"Full state (debug): {state}")
+
     try:
         humidity = state["humidity"]["currentHumidity"]
         is_on = state["operation"]["dehumidifierOperationMode"] == "POWER_ON"
