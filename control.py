@@ -15,8 +15,8 @@ COUNTRY = "KR"
 API_KEY = "v6GFvkweNo7DK7yD3ylIZ9w52aKBU0eJ7wLXkSR3"
 BASE_URL = "https://api-kic.lgthinq.com"
 
-TURN_ON_ABOVE = 55
-TURN_OFF_BELOW = 50
+TURN_ON_ABOVE = 53
+TURN_OFF_BELOW = 48
 
 STATE_FILE = Path(__file__).parent / "state.json"
 
